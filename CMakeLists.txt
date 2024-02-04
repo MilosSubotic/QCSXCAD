@@ -152,6 +152,7 @@ set( SOURCES
   QCSPrimEditor.cpp
   QCSPropEditor.cpp
   QCSTreeWidget.cpp
+  QCSTreeWidget2.cpp
   QParameterGui.cpp
   QVTKStructure.cpp
   VTKPrimitives.cpp
@@ -167,6 +168,7 @@ set(PUB_HEADERS
   QCSPrimEditor.h
   QCSPropEditor.h
   QCSTreeWidget.h
+  QCSTreeWidget2.h
   QParameterGui.h
   QVTKStructure.h
   VTKPrimitives.h

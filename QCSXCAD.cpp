@@ -25,6 +25,7 @@
 #include "QCSPrimEditor.h"
 #include "QCSPropEditor.h"
 #include "QCSTreeWidget.h"
+#include "QCSTreeWidget2.h"
 #include "QCSGridEditor.h"
 #include "QParameterGui.h"
 #include "tinyxml.h"
@@ -85,10 +86,18 @@ QCSXCAD::QCSXCAD(QWidget *parent) : QMainWindow(parent)
 
 	setCentralWidget(StructureVTK->GetVTKWidget());
 
+#if TREE_WIDGET2
+	CSTree = new QCSTreeWidget2(this);
+#else
 	CSTree = new QCSTreeWidget(this);
+#endif
 	QObject::connect(CSTree,SIGNAL(Edit()),this,SLOT(Edit()));
 	QObject::connect(CSTree,SIGNAL(Copy()),this,SLOT(Copy()));
 	QObject::connect(CSTree,SIGNAL(ShowHide()),this,SLOT(ShowHide()));
+#if TREE_WIDGET2
+	QObject::connect(CSTree,SIGNAL(Show(CSProperties*)),this,SLOT(Show(CSProperties*)));
+	QObject::connect(CSTree,SIGNAL(Hide(CSProperties*)),this,SLOT(Hide(CSProperties*)));
+#endif
 	QObject::connect(CSTree,SIGNAL(Delete()),this,SLOT(Delete()));
 	QObject::connect(CSTree,SIGNAL(NewBox()),this,SLOT(NewBox()));
 	QObject::connect(CSTree,SIGNAL(NewMultiBox()),this,SLOT(NewMultiBox()));
@@ -494,6 +503,18 @@ void QCSXCAD::ShowHide()
 		else StructureVTK->SetPropOpacity(prop->GetUniqueID(),0);
 	}
 }
+#if TREE_WIDGET2
+void QCSXCAD::Show(CSProperties* prop)
+{
+	prop->SetVisibility(true);
+	StructureVTK->SetPropOpacity(prop->GetUniqueID(),prop->GetFillColor().a);
+}
+void QCSXCAD::Hide(CSProperties* prop)
+{
+	prop->SetVisibility(false);
+	StructureVTK->SetPropOpacity(prop->GetUniqueID(),0);
+}
+#endif
 
 void QCSXCAD::Delete()
 {
@@ -994,4 +1015,3 @@ void QCSXCAD::keyPressEvent(QKeyEvent * event)
 		CSTree->setCurrentItem(NULL);
 	QMainWindow::keyPressEvent(event);
 }
-
