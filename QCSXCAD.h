@@ -18,8 +18,6 @@
 #ifndef _QCSXCAD_H_
 #define _QCSXCAD_H_
 
-// Config.
-#define TREE_WIDGET2 1
 
 #include <QMainWindow>
 #include <QHash>
@@ -124,10 +122,8 @@ protected slots:
 	void Edit();
 	void Copy();
 	void ShowHide();
-#if TREE_WIDGET2
 	void Show(CSProperties* prop);
 	void Hide(CSProperties* prop);
-#endif
 
 	void Delete();
 
@@ -165,11 +161,8 @@ protected:
 
 	bool m_RenderDiscModels;
 
-#if TREE_WIDGET2
-	QCSTreeWidget2 *CSTree;
-#else
 	QCSTreeWidget *CSTree;
-#endif
+	QCSTreeWidget2 *CSTree2;
 	QCSGridEditor* GridEditor;
 	QParameterSet* QParaSet;
 

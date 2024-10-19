@@ -87,31 +87,44 @@ QCSXCAD::QCSXCAD(QWidget *parent) : QMainWindow(parent)
 
 
 
-#if TREE_WIDGET2
-	CSTree = new QCSTreeWidget2(this);
-#else
+	CSTree2 = new QCSTreeWidget2(this);
 	CSTree = new QCSTreeWidget(this);
-#endif
+	
+	QObject::connect(CSTree2,SIGNAL(Show(CSProperties*)),this,SLOT(Show(CSProperties*)));
+	QObject::connect(CSTree2,SIGNAL(Hide(CSProperties*)),this,SLOT(Hide(CSProperties*)));
+
+	QObject::connect(CSTree2,SIGNAL(Edit()),this,SLOT(Edit()));
+	QObject::connect(CSTree2,SIGNAL(Copy()),this,SLOT(Copy()));
+	QObject::connect(CSTree2,SIGNAL(ShowHide()),this,SLOT(ShowHide()));
+	QObject::connect(CSTree2,SIGNAL(Delete()),this,SLOT(Delete()));
+	QObject::connect(CSTree2,SIGNAL(NewBox()),this,SLOT(NewBox()));
+	QObject::connect(CSTree2,SIGNAL(NewMultiBox()),this,SLOT(NewMultiBox()));
+	QObject::connect(CSTree2,SIGNAL(NewSphere()),this,SLOT(NewSphere()));
+	QObject::connect(CSTree2,SIGNAL(NewCylinder()),this,SLOT(NewCylinder()));
+	QObject::connect(CSTree2,SIGNAL(NewUserDefined()),this,SLOT(NewUserDefined()));
+	QObject::connect(CSTree2,SIGNAL(NewMaterial()),this,SLOT(NewMaterial()));
+	QObject::connect(CSTree2,SIGNAL(NewMetal()),this,SLOT(NewMetal()));
+	QObject::connect(CSTree2,SIGNAL(NewExcitation()),this,SLOT(NewExcitation()));
+	QObject::connect(CSTree2,SIGNAL(NewChargeBox()),this,SLOT(NewChargeBox()));
+	QObject::connect(CSTree2,SIGNAL(NewResBox()),this,SLOT(NewResBox()));
+	QObject::connect(CSTree2,SIGNAL(NewDumpBox()),this,SLOT(NewDumpBox()));
+
 	QObject::connect(CSTree,SIGNAL(Edit()),this,SLOT(Edit()));
 	QObject::connect(CSTree,SIGNAL(Copy()),this,SLOT(Copy()));
 	QObject::connect(CSTree,SIGNAL(ShowHide()),this,SLOT(ShowHide()));
-#if TREE_WIDGET2
-	QObject::connect(CSTree,SIGNAL(Show(CSProperties*)),this,SLOT(Show(CSProperties*)));
-	QObject::connect(CSTree,SIGNAL(Hide(CSProperties*)),this,SLOT(Hide(CSProperties*)));
-#endif
 	QObject::connect(CSTree,SIGNAL(Delete()),this,SLOT(Delete()));
 	QObject::connect(CSTree,SIGNAL(NewBox()),this,SLOT(NewBox()));
 	QObject::connect(CSTree,SIGNAL(NewMultiBox()),this,SLOT(NewMultiBox()));
 	QObject::connect(CSTree,SIGNAL(NewSphere()),this,SLOT(NewSphere()));
 	QObject::connect(CSTree,SIGNAL(NewCylinder()),this,SLOT(NewCylinder()));
 	QObject::connect(CSTree,SIGNAL(NewUserDefined()),this,SLOT(NewUserDefined()));
-
 	QObject::connect(CSTree,SIGNAL(NewMaterial()),this,SLOT(NewMaterial()));
 	QObject::connect(CSTree,SIGNAL(NewMetal()),this,SLOT(NewMetal()));
 	QObject::connect(CSTree,SIGNAL(NewExcitation()),this,SLOT(NewExcitation()));
 	QObject::connect(CSTree,SIGNAL(NewChargeBox()),this,SLOT(NewChargeBox()));
 	QObject::connect(CSTree,SIGNAL(NewResBox()),this,SLOT(NewResBox()));
 	QObject::connect(CSTree,SIGNAL(NewDumpBox()),this,SLOT(NewDumpBox()));
+
 
 	GridEditor = new QCSGridEditor(&clGrid);
 	QObject::connect(GridEditor,SIGNAL(OpacityChange(int)),StructureVTK,SLOT(SetGridOpacity(int)));
@@ -163,6 +176,12 @@ QCSXCAD::QCSXCAD(QWidget *parent) : QMainWindow(parent)
 	QTabWidget* tab = new QTabWidget(this);
 	QWidget* page;
 	QVBoxLayout* layout;
+
+	page = new QWidget();
+	tab->addTab(page, "tree2");
+	layout = new QVBoxLayout;
+	page->setLayout(layout);
+	layout->addWidget(CSTree2);
 
 	page = new QWidget();
 	tab->addTab(page, "tree");
@@ -342,8 +361,11 @@ bool QCSXCAD::ReadNode(TiXmlNode* root)
 	clear();
 	QString msg(ReadFromXML(root));
 	if (msg.isEmpty()==false) QMessageBox::warning(this,tr("Geometry read error"),tr("An geometry read error occured!!\n\n")+msg,QMessageBox::Ok,QMessageBox::NoButton);
+	CSTree2->UpdateTree();
+	CSTree2->expandAll();
 	CSTree->UpdateTree();
 	CSTree->expandAll();
+
 	setModified();
 	CheckGeometry();
 	GridEditor->Update();
@@ -380,8 +402,11 @@ bool QCSXCAD::ReadFile(QString filename)
 	if (msg.isEmpty()==false)
 		QMessageBox::warning(this,tr("Geometry read error"),tr("An geometry read error occured!!\n\n")+msg,QMessageBox::Ok,QMessageBox::NoButton);
 
+	CSTree2->UpdateTree();
+	CSTree2->expandAll();
 	CSTree->UpdateTree();
 	CSTree->expandAll();
+
 	setModified();
 	CheckGeometry();
 	GridEditor->Update();
@@ -506,6 +531,7 @@ void QCSXCAD::SetVisibility2All(bool value)
 	{
 		CSProperties* prop = vProperties.at(n);
 		prop->SetVisibility(value);
+		CSTree2->RefreshItem(GetIndex(prop));
 		CSTree->RefreshItem(GetIndex(prop));
 		if (value) StructureVTK->SetPropOpacity(prop->GetUniqueID(),prop->GetFillColor().a);
 		else StructureVTK->SetPropOpacity(prop->GetUniqueID(),0);
@@ -529,7 +555,18 @@ void QCSXCAD::SetParallelProjection(bool val)
 
 void QCSXCAD::ShowHide()
 {
-	CSProperties* prop = CSTree->GetCurrentProperty();
+	CSProperties* prop;
+
+	prop = CSTree2->GetCurrentProperty();
+	if (prop!=NULL)
+	{
+		prop->SetVisibility(!prop->GetVisibility());
+		CSTree2->RefreshItem(GetIndex(prop));
+		if (prop->GetVisibility()) StructureVTK->SetPropOpacity(prop->GetUniqueID(),prop->GetFillColor().a);
+		else StructureVTK->SetPropOpacity(prop->GetUniqueID(),0);
+	}
+
+	prop = CSTree->GetCurrentProperty();
 	if (prop!=NULL)
 	{
 		prop->SetVisibility(!prop->GetVisibility());
@@ -538,7 +575,7 @@ void QCSXCAD::ShowHide()
 		else StructureVTK->SetPropOpacity(prop->GetUniqueID(),0);
 	}
 }
-#if TREE_WIDGET2
+
 void QCSXCAD::Show(CSProperties* prop)
 {
 	prop->SetVisibility(true);
@@ -549,7 +586,6 @@ void QCSXCAD::Hide(CSProperties* prop)
 	prop->SetVisibility(false);
 	StructureVTK->SetPropOpacity(prop->GetUniqueID(),0);
 }
-#endif
 
 void QCSXCAD::Delete()
 {
@@ -894,6 +930,7 @@ void QCSXCAD::EnableDiscModelRendering(bool val)
 
 void QCSXCAD::GUIUpdate()
 {
+	CSTree2->UpdateTree();
 	CSTree->UpdateTree();
 	GridEditor->Update();
 	for (int n=0;n<3;++n)
@@ -926,6 +963,8 @@ void QCSXCAD::BuildToolBar()
 	ItemTB->setIconSize(TBIconSize);
 	ItemTB->setObjectName("Item_View_ToolBar");
 
+	ItemTB->addAction(tr("CollapseAll"),CSTree2,SLOT(collapseAll()));
+	ItemTB->addAction(tr("ExpandAll"),CSTree2,SLOT(expandAll()));
 	ItemTB->addAction(tr("CollapseAll"),CSTree,SLOT(collapseAll()));
 	ItemTB->addAction(tr("ExpandAll"),CSTree,SLOT(expandAll()));
 
@@ -1046,7 +1085,10 @@ void QCSXCAD::View3D()
 void QCSXCAD::keyPressEvent(QKeyEvent * event)
 {
 	if (event->key()==Qt::Key_Delete) Delete();
-	if (event->key()==Qt::Key_Escape)
+	if (event->key()==Qt::Key_Escape){
+		CSTree2->setCurrentItem(NULL);
 		CSTree->setCurrentItem(NULL);
+
+	}
 	QMainWindow::keyPressEvent(event);
 }
