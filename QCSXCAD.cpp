@@ -19,6 +19,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QAction>
+#include <QTabWidget>
 
 #include "QCSXCAD.h"
 #include "QVTKStructure.h"
@@ -84,7 +85,7 @@ QCSXCAD::QCSXCAD(QWidget *parent) : QMainWindow(parent)
 	StructureVTK = new QVTKStructure();
 	StructureVTK->SetGeometry(this);
 
-	setCentralWidget(StructureVTK->GetVTKWidget());
+
 
 #if TREE_WIDGET2
 	CSTree = new QCSTreeWidget2(this);
@@ -112,14 +113,6 @@ QCSXCAD::QCSXCAD(QWidget *parent) : QMainWindow(parent)
 	QObject::connect(CSTree,SIGNAL(NewResBox()),this,SLOT(NewResBox()));
 	QObject::connect(CSTree,SIGNAL(NewDumpBox()),this,SLOT(NewDumpBox()));
 
-	QDockWidget *dock = new QDockWidget(tr("Properties and Structures"),this);
-	dock->setAllowedAreas(Qt::LeftDockWidgetArea);
-	dock->setWidget(CSTree);
-	dock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-	dock->setObjectName("Properties_and_Structures_Dock");
-
-	addDockWidget(Qt::LeftDockWidgetArea,dock);
-
 	GridEditor = new QCSGridEditor(&clGrid);
 	QObject::connect(GridEditor,SIGNAL(OpacityChange(int)),StructureVTK,SLOT(SetGridOpacity(int)));
 	QObject::connect(GridEditor,SIGNAL(signalDetectEdges(int)),this,SLOT(DetectEdges(int)));
@@ -128,17 +121,29 @@ QCSXCAD::QCSXCAD(QWidget *parent) : QMainWindow(parent)
 	QObject::connect(GridEditor,SIGNAL(GridPlaneYChanged(int)),StructureVTK,SLOT(RenderGridY(int)));
 	QObject::connect(GridEditor,SIGNAL(GridPlaneZChanged(int)),StructureVTK,SLOT(RenderGridZ(int)));
 
+	QParaSet = new QParameterSet();
+	QObject::connect(QParaSet,SIGNAL(ParameterChanged()),this,SLOT(CheckGeometry()));
+	QObject::connect(QParaSet,SIGNAL(ParameterChanged()),this,SLOT(setModified()));
+	clParaSet = QParaSet;
+
+
+	setCentralWidget(StructureVTK->GetVTKWidget());
+#if 0
+
+	QDockWidget *dock;
+	dock = new QDockWidget(tr("Properties and Structures"),this);
+	dock->setAllowedAreas(Qt::LeftDockWidgetArea);
+	dock->setWidget(CSTree);
+	dock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	dock->setObjectName("Properties_and_Structures_Dock");
+	addDockWidget(Qt::LeftDockWidgetArea,dock);
+
 	dock = new QDockWidget(tr("Rectilinear Grid"),this);
 	dock->setAllowedAreas(Qt::LeftDockWidgetArea);
 	dock->setWidget(GridEditor);
 	dock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
 	dock->setObjectName("Rectilinear_Grid_Dock");
 	addDockWidget(Qt::LeftDockWidgetArea,dock);
-
-	QParaSet= new QParameterSet();
-	QObject::connect(QParaSet,SIGNAL(ParameterChanged()),this,SLOT(CheckGeometry()));
-	QObject::connect(QParaSet,SIGNAL(ParameterChanged()),this,SLOT(setModified()));
-	clParaSet=QParaSet;
 
 	dock = new QDockWidget(tr("Rectilinear Grid - Plane Position"),this);
 	dock->setAllowedAreas(Qt::LeftDockWidgetArea);
@@ -153,6 +158,36 @@ QCSXCAD::QCSXCAD(QWidget *parent) : QMainWindow(parent)
 	dock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
 	dock->setObjectName("Parameter_Dock");
 	addDockWidget(Qt::LeftDockWidgetArea,dock);
+
+#else
+	QTabWidget* tab = new QTabWidget(this);
+	QWidget* page;
+	QVBoxLayout* layout;
+
+	page = new QWidget();
+	tab->addTab(page, "tree");
+	layout = new QVBoxLayout;
+	page->setLayout(layout);
+	layout->addWidget(CSTree);
+
+	page = new QWidget();
+	tab->addTab(page, "other");
+	layout = new QVBoxLayout;
+	page->setLayout(layout);
+	layout->addWidget(GridEditor);
+	layout->addWidget(GridEditor->BuildPlanePosWidget());
+	layout->addWidget(QParaSet);
+
+
+	QDockWidget *dock;
+	dock = new QDockWidget(this);
+	dock->setAllowedAreas(Qt::LeftDockWidgetArea);
+	dock->setWidget(tab);
+	dock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	dock->setObjectName("Main_Dock");
+	addDockWidget(Qt::LeftDockWidgetArea,dock);
+#endif
+
 
 	BuildToolBar();
 
