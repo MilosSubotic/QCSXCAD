@@ -23,6 +23,8 @@
 #include <QSpinBox>
 #include <QMessageBox>
 #include <QTextEdit>
+#include <QStyleOptionButton>
+#include <QDebug>
 
 #include "QCSGridEditor.h"
 #include "CSRectGrid.h"
@@ -108,6 +110,28 @@ QToolBar* QCSGridEditor::BuildToolbar()
 	return TB;
 }
 
+static void minimizeButton(QPushButton* button)
+{
+	// https://stackoverflow.com/a/8158397
+	auto textSize = button->fontMetrics().size(Qt::TextShowMnemonic, button->text());
+	QStyleOptionButton opt;
+	opt.initFrom(button);
+	opt.rect.setSize(textSize);
+	auto minSize = button->style()->sizeFromContents(
+		QStyle::CT_PushButton,
+		&opt,
+		textSize,
+		button
+	);
+	auto w = minSize.width();
+	auto h = minSize.height();
+	auto squareMinSize = QSize(
+		qMax(w, h),
+		h
+	);
+	button->setMaximumSize(squareMinSize);
+}
+
 QWidget* QCSGridEditor::BuildPlanePosWidget()
 {
 	QWidget* PPWid = new QWidget();
@@ -116,12 +140,27 @@ QWidget* QCSGridEditor::BuildPlanePosWidget()
 	for (int n=0;n<3;++n)
 	{
 		m_NormNames[n] = new QLabel(GetNormName(n)+ tr(" plane:"));
-		lay->addWidget( m_NormNames[n] ,n,0);
+		lay->addWidget(m_NormNames[n], 2*n, 0, 1, 2);
+
 		m_PlanePos[n] = new QSlider();
 		m_PlanePos[n]->setOrientation(Qt::Horizontal);
-		lay->addWidget(m_PlanePos[n],n,1);
+		lay->addWidget(m_PlanePos[n], 2*n, 2);
+
+
 		m_PlanePosValue[n] = new QLabel();
-		lay->addWidget(m_PlanePosValue[n],n,2);
+		lay->addWidget(m_PlanePosValue[n], 2*n+1, 2);
+
+		m_PlanePosInc[n] = new QPushButton();
+		m_PlanePosInc[n]->setText(tr("+"));
+		minimizeButton(m_PlanePosInc[n]);
+		lay->addWidget(m_PlanePosInc[n], 2*n+1, 0);
+
+		m_PlanePosDec[n] = new QPushButton();
+		m_PlanePosDec[n]->setText(tr("-"));
+		minimizeButton(m_PlanePosDec[n]);
+		lay->addWidget(m_PlanePosDec[n], 2*n+1, 1);
+
+
 	}
 	QObject::connect(m_PlanePos[0],SIGNAL(valueChanged(int)),this,SIGNAL(GridPlaneXChanged(int)));
 	QObject::connect(m_PlanePos[1],SIGNAL(valueChanged(int)),this,SIGNAL(GridPlaneYChanged(int)));
@@ -130,6 +169,14 @@ QWidget* QCSGridEditor::BuildPlanePosWidget()
 	QObject::connect(m_PlanePos[0],SIGNAL(valueChanged(int)),this,SLOT(SetGridPlaneX(int)));
 	QObject::connect(m_PlanePos[1],SIGNAL(valueChanged(int)),this,SLOT(SetGridPlaneY(int)));
 	QObject::connect(m_PlanePos[2],SIGNAL(valueChanged(int)),this,SLOT(SetGridPlaneZ(int)));
+
+	QObject::connect(m_PlanePosInc[0], SIGNAL(clicked()), this, SLOT(IncGridPlaneX()));
+	QObject::connect(m_PlanePosInc[1], SIGNAL(clicked()), this, SLOT(IncGridPlaneY()));
+	QObject::connect(m_PlanePosInc[2], SIGNAL(clicked()), this, SLOT(IncGridPlaneZ()));
+	QObject::connect(m_PlanePosDec[0], SIGNAL(clicked()), this, SLOT(DecGridPlaneX()));
+	QObject::connect(m_PlanePosDec[1], SIGNAL(clicked()), this, SLOT(DecGridPlaneY()));
+	QObject::connect(m_PlanePosDec[2], SIGNAL(clicked()), this, SLOT(DecGridPlaneZ()));
+
 
 	PPWid->setLayout(lay);
 	return PPWid;
@@ -645,4 +692,24 @@ QString QCSGridEditor::GetNormName(int ny)
 		}
 	}
 	return "";
+}
+
+void QCSGridEditor::IncGridPlaneX() {
+	m_PlanePos[0]->triggerAction(QAbstractSlider::SliderAction::SliderSingleStepAdd);
+}
+void QCSGridEditor::IncGridPlaneY() {
+	m_PlanePos[1]->triggerAction(QAbstractSlider::SliderAction::SliderSingleStepAdd);
+}
+void QCSGridEditor::IncGridPlaneZ() {
+	m_PlanePos[2]->triggerAction(QAbstractSlider::SliderAction::SliderSingleStepAdd);
+}
+
+void QCSGridEditor::DecGridPlaneX() {
+	m_PlanePos[0]->triggerAction(QAbstractSlider::SliderAction::SliderSingleStepSub);
+}
+void QCSGridEditor::DecGridPlaneY() {
+	m_PlanePos[1]->triggerAction(QAbstractSlider::SliderAction::SliderSingleStepSub);
+}
+void QCSGridEditor::DecGridPlaneZ() {
+	m_PlanePos[2]->triggerAction(QAbstractSlider::SliderAction::SliderSingleStepSub);
 }

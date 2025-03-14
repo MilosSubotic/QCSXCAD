@@ -26,6 +26,7 @@
 #include <QSlider>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPushButton>
 
 class CSRectGrid;
 
@@ -70,6 +71,13 @@ protected slots:
 	void DetectEdges();
 	void SetDeltaUnit(QString val);
 
+	void IncGridPlaneX();
+	void IncGridPlaneY();
+	void IncGridPlaneZ();
+	void DecGridPlaneX();
+	void DecGridPlaneY();
+	void DecGridPlaneZ();
+
 protected:
 	CSRectGrid* clGrid;
 	QVector<QLabel*> SimBox;
@@ -81,6 +89,8 @@ protected:
 	QSlider* m_PlanePos[3];
 	QLabel* m_NormNames[3];
 	QLabel* m_PlanePosValue[3];
+	QPushButton* m_PlanePosInc[3];
+	QPushButton* m_PlanePosDec[3];
 
 	double* GetDoubleArrayFromString(int *count, QString qsValue);
 };
